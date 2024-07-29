@@ -1,9 +1,12 @@
-import { Cell, beginCell, Address, WalletContract, beginDict, Slice } from "ton";
+import { Cell, beginCell, Address, WalletContract, beginDict, Slice, toNano } from "ton";
 
 import walletHex from "./jetton-wallet.compiled.json";
 import minterHex from "./jetton-minter.compiled.json";
 import { Sha256 } from "@aws-crypto/sha256-js";
 import BN from "bn.js";
+import { OPS } from "../lib/ops";
+import { toDecimalsBN } from "../lib/utils";
+
 
 export const JETTON_WALLET_CODE = Cell.fromBoc(walletHex.hex)[0];
 export const JETTON_MINTER_CODE = Cell.fromBoc(minterHex.hex)[0]; // code cell from build output
@@ -15,12 +18,14 @@ const SNAKE_PREFIX = 0x00;
 // - Data is stored on-chain (except for the image data itself)
 // - Owner should usually be the deploying wallet's address.
 const jettonParams = {
-  owner: Address.parse("EQD4gS-Nj2Gjr2FYtg-s3fXUvjzKbzHGZ5_1Xe_V0-GCp0p2"),
-  name: "MyJetton",
-  symbol: "JET1",
-  image: "https://www.linkpicture.com/q/download_183.png", // Image url
-  description: "My jetton",
+  owner: Address.parse(`${process.env.WALLET_ADDRESS}`),
+  name: `${process.env.JETTON_NAME}`,
+  symbol: `${process.env.JETTON_SYMBOL}`,
+  image: `${process.env.JETTON_IMAGE}`,
+  description: `${process.env.JETTON_DESCRIPTION}`
 };
+
+
 
 export type JettonMetaDataKeys = "name" | "description" | "image" | "symbol";
 
@@ -122,7 +127,7 @@ export function jettonMinterInitData(
   metadata: { [s in JettonMetaDataKeys]?: string }
 ): Cell {
   return beginCell()
-    .storeCoins(0)
+    .storeCoins(toNano(`${process.env.TOTAL_SUPPLY}`))
     .storeAddress(owner)
     .storeRef(buildTokenMetadataCell(metadata))
     .storeRef(JETTON_WALLET_CODE)
@@ -139,9 +144,46 @@ export function initData() {
   });
 }
 
+// return the init Cell of the mint for deploy- first time
+export function mintBody(
+  owner: Address,
+  jettonValue: BN,
+  transferToJWallet: BN,
+  queryId: number,
+): Cell {
+
+  console.log("minting for deploy...");
+
+  return beginCell()
+    .storeUint(OPS.Mint, 32)
+    .storeUint(queryId, 64) // queryid
+    .storeAddress(owner)
+    .storeCoins(transferToJWallet)
+    .storeRef(
+      // internal transfer message
+      beginCell()
+        .storeUint(OPS.InternalTransfer, 32)
+        .storeUint(0, 64)
+        .storeCoins(jettonValue)
+        .storeAddress(null)
+        .storeAddress(owner)
+        .storeCoins(toNano(0.001))
+        .storeBit(false) // forward_payload in this slice, not separate cell
+        .endCell(),
+    )
+    .endCell();
+}
+
+
 // return the op that should be sent to the contract on deployment, can be "null" to send an empty message
 export function initMessage() {
-  return null; // TODO?
+  //return null;
+  return initMint();
+}
+
+export function initMint() {
+  const amountToMint = toDecimalsBN(Number(`${process.env.AMOUNT_TO_MINT}`), 9);
+  return mintBody(Address.parse(`${process.env.WALLET_ADDRESS}`), amountToMint, toNano(0.2), 10);
 }
 
 // optional end-to-end sanity test for the actual on-chain contract to see it is actually working on-chain
