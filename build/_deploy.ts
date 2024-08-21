@@ -130,6 +130,7 @@ async function main() {
       const seqnoAfter = await walletContract.getSeqNo();
       if (seqnoAfter > seqno) break;
     }
+    await sleep(5000);
     if (await client.isContractDeployed(newContractAddress)) {
       console.log(` - SUCCESS! Contract deployed successfully to address: ${newContractAddress.toFriendly()}`);
       const contractBalance = await client.getBalance(newContractAddress);
