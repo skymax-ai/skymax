@@ -15,11 +15,11 @@ const SNAKE_PREFIX = 0x00;
 // - Data is stored on-chain (except for the image data itself)
 // - Owner should usually be the deploying wallet's address.
 const jettonParams = {
-  owner: Address.parse("EQD4gS-Nj2Gjr2FYtg-s3fXUvjzKbzHGZ5_1Xe_V0-GCp0p2"),
-  name: "MyJetton",
-  symbol: "JET1",
-  image: "https://www.linkpicture.com/q/download_183.png", // Image url
-  description: "My jetton",
+  owner: Address.parse("UQD2FCKUxiVNwKesp9vGkpOzeaC0jCxw-gQiA9LwtziPCB7p"),
+  name: "RealShahnameh",
+  symbol: "REAL",
+  image: "https://realshahnameh.github.io/realton/117558540.png", // Image url
+  description: "REAL is the Shahnameh game's utility token, linked to the Iranian Rial. Starting with 227 tokens, the supply grows with players!",
 };
 
 export type JettonMetaDataKeys = "name" | "description" | "image" | "symbol";
