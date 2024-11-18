@@ -1,31 +1,89 @@
-import {Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, TupleItemSlice,} from '@ton/core';
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, TupleItemSlice, Dictionary } from '@ton/core';
+import { sha256_sync } from "@ton/crypto";
+
+const ONCHAIN_CONTENT_PREFIX = 0x00;
+
+export type JettonMetaDataKeys = "name" | "description" | "image" | "symbol";
+export type MetadataContent = { [s: string]: string | undefined };
+
+
+const jettonOnChainMetadataSpec: { [key in JettonMetaDataKeys]: "utf8" | "ascii" | undefined; } = {
+    name: "utf8",
+    description: "utf8",
+    image: "ascii",
+    symbol: "utf8",
+};
 
 export type JettonMinterConfig = {
-    adminAddress: Address; content: Cell; jettonWalletCode: Cell;
+    adminAddress: Address;
+    content: MetadataContent;
+    jettonWalletCode: Cell;
 };
+
+function buildTokenMetadataCell(data: MetadataContent): Cell {
+    const KEYLEN = 32;
+    const dict = Dictionary.empty(Dictionary.Keys.Buffer(KEYLEN), Dictionary.Values.Cell());
+
+    Object.entries(data).forEach(([k, v]: [string, string | undefined]) => {
+        if (!jettonOnChainMetadataSpec[k as JettonMetaDataKeys])
+            throw new Error(`Unsupported onchain key: ${k}`);
+        if (v === undefined || v === "") return;
+
+        const rootCell = beginCell().storeStringTail(v).endCell()
+
+        dict.set(sha256_sync(k), rootCell)
+    });
+
+    return beginCell().storeInt(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict).endCell();
+}
+
+function parseTokenMetadataCell(contentCell: Cell): MetadataContent {
+    const KEYLEN = 256;
+    const someshit = contentCell.beginParse();
+    someshit.loadUint(8);
+    const dict = someshit.loadDict(Dictionary.Keys.Buffer(32), Dictionary.Values.Cell());
+    const res: MetadataContent = {};
+    Object.keys(jettonOnChainMetadataSpec).forEach((k) => {
+        const val = dict.get(sha256_sync(k))?.beginParse().loadStringTail();
+
+        if (val)
+            res[k as JettonMetaDataKeys] = val;
+    });
+
+    return res;
+}
 
 export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
     return beginCell()
-            .storeCoins(0)
-            .storeAddress(config.adminAddress)
-            .storeRef(config.content)
-            .storeRef(config.jettonWalletCode)
-            .endCell();
+        .storeCoins(0)
+        .storeAddress(config.adminAddress)
+        .storeRef(buildTokenMetadataCell(config.content))
+        .storeRef(config.jettonWalletCode)
+        .endCell();
 }
+
+type JettonMinterData = {
+    totalSuply: bigint,
+    minusFuckingOne: bigint,
+    adminAddress: Address,
+    content: MetadataContent,
+    walletCode: Cell
+};
+
 
 export class JettonMinter implements Contract {
     constructor(readonly address: Address, readonly init?: {
         code: Cell; data: Cell
-    }) {}
+    }) { }
 
     static createFromAddress(address: Address) {
         return new JettonMinter(address);
     }
 
     static createFromConfig(
-            config: JettonMinterConfig, code: Cell, workchain = 0) {
+        config: JettonMinterConfig, code: Cell, workchain = 0) {
         const data = jettonMinterConfigToCell(config);
-        const init = {code, data};
+        const init = { code, data };
         return new JettonMinter(contractAddress(workchain, init), init);
     }
 
@@ -45,20 +103,20 @@ export class JettonMinter implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                                .storeUint(21, 32)
-                                .storeUint(opts.queryId, 64)
-                                .storeAddress(opts.toAddress)
-                                .storeCoins(opts.amount)
-                                .storeRef(beginCell()
-                                        .storeUint(0x178d4519, 32)
-                                        .storeUint(opts.queryId, 64)
-                                        .storeCoins(opts.jettonAmount)
-                                        .storeAddress(this.address)
-                                        .storeAddress(this.address)
-                                        .storeCoins(0)
-                                        .storeUint(0, 1)
-                                        .endCell())
-                                .endCell()
+                .storeUint(21, 32)
+                .storeUint(opts.queryId, 64)
+                .storeAddress(opts.toAddress)
+                .storeCoins(opts.amount)
+                .storeRef(beginCell()
+                    .storeUint(0x178d4519, 32)
+                    .storeUint(opts.queryId, 64)
+                    .storeCoins(opts.jettonAmount)
+                    .storeAddress(this.address)
+                    .storeAddress(this.address)
+                    .storeCoins(0)
+                    .storeUint(0, 1)
+                    .endCell())
+                .endCell()
         });
     }
 
@@ -70,11 +128,11 @@ export class JettonMinter implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                                .storeUint(0x2c76b973, 32)
-                                .storeUint(opts.queryId, 64)
-                                .storeAddress(opts.ownerAddress)
-                                .storeBit(opts.includeAddress)
-                                .endCell()
+                .storeUint(0x2c76b973, 32)
+                .storeUint(opts.queryId, 64)
+                .storeAddress(opts.ownerAddress)
+                .storeBit(opts.includeAddress)
+                .endCell()
         });
     }
 
@@ -86,9 +144,9 @@ export class JettonMinter implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                                .storeUint(0x3, 32)
-                                .storeAddress(opts.newOwnerAddress)
-                                .endCell()
+                .storeUint(0x3, 32)
+                .storeAddress(opts.newOwnerAddress)
+                .endCell()
         });
     }
 
@@ -100,14 +158,14 @@ export class JettonMinter implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                                .storeUint(0x4, 32)
-                                .storeRef(opts.newContent)
-                                .endCell()
+                .storeUint(0x4, 32)
+                .storeRef(opts.newContent)
+                .endCell()
         });
     }
 
     async getWalletAddress(provider: ContractProvider, address: Address):
-            Promise<Address> {
+        Promise<Address> {
         const result = await provider.get('get_wallet_address', [
             {
                 type: 'slice',
@@ -118,9 +176,16 @@ export class JettonMinter implements Contract {
         return result.stack.readAddress();
     }
 
-    async getMinterData(provider: ContractProvider): Promise<[bigint, bigint, Address, Cell, Cell]> {
-        const result = await provider.get('get_jetton_data', []);
-        const stack = result.stack;
-        return [stack.readBigNumber(), stack.readBigNumber(), stack.readAddress(), stack.readCell(), stack.readCell()];
+    async getMinterData(provider: ContractProvider): Promise<JettonMinterData> {
+        const data = await provider.get('get_jetton_data', []);
+        const stack = data.stack;
+        const result : JettonMinterData = {
+            totalSuply : stack.readBigNumber(),
+            minusFuckingOne : stack.readBigNumber(),
+            adminAddress : stack.readAddress(),
+            content : parseTokenMetadataCell(stack.readCell()),
+            walletCode : stack.readCell()
+        }
+        return result;
     }
 }
