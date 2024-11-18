@@ -135,8 +135,8 @@ export class JettonWallet implements Contract {
         });
     }
 
-    async getWalletJettonAmount(provider: ContractProvider): Promise<bigint> {
+    async getWalletData(provider: ContractProvider): Promise<[BigInt, Address, Address, Cell]> {
         const { stack } = await provider.get('get_wallet_data', []);
-        return stack.readBigNumber();
+        return [stack.readBigNumber(), stack.readAddress(), stack.readAddress(), stack.readCell()];
     }
 }

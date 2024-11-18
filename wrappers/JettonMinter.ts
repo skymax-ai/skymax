@@ -58,7 +58,51 @@ export class JettonMinter implements Contract {
                                         .storeCoins(0)
                                         .storeUint(0, 1)
                                         .endCell())
-                                .endCell(),
+                                .endCell()
+        });
+    }
+
+    async sendProvideWalletAddress(provider: ContractProvider, via: Sender, opts: {
+        queryId: number; ownerAddress: Address; includeAddress: boolean;
+        value: bigint;
+    }) {
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                                .storeUint(0x2c76b973, 32)
+                                .storeUint(opts.queryId, 64)
+                                .storeAddress(opts.ownerAddress)
+                                .storeBit(opts.includeAddress)
+                                .endCell()
+        });
+    }
+
+    async sendCahngeAdmin(provider: ContractProvider, via: Sender, opts: {
+        newOwnerAddress: Address;
+        value: bigint;
+    }) {
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                                .storeUint(0x3, 32)
+                                .storeAddress(opts.newOwnerAddress)
+                                .endCell()
+        });
+    }
+
+    async sendChangeContent(provider: ContractProvider, via: Sender, opts: {
+        newContent: Cell;
+        value: bigint;
+    }) {
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                                .storeUint(0x4, 32)
+                                .storeRef(opts.newContent)
+                                .endCell()
         });
     }
 
@@ -74,8 +118,9 @@ export class JettonMinter implements Contract {
         return result.stack.readAddress();
     }
 
-    async getTotalSupply(provider: ContractProvider): Promise<bigint> {
+    async getMinterData(provider: ContractProvider): Promise<[bigint, bigint, Address, Cell, Cell]> {
         const result = await provider.get('get_jetton_data', []);
-        return result.stack.readBigNumber();
+        const stack = result.stack;
+        return [stack.readBigNumber(), stack.readBigNumber(), stack.readAddress(), stack.readCell(), stack.readCell()];
     }
 }
