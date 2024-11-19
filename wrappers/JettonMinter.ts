@@ -6,7 +6,6 @@ const ONCHAIN_CONTENT_PREFIX = 0x00;
 export type JettonMetaDataKeys = "name" | "description" | "image" | "symbol";
 export type MetadataContent = { [s: string]: string | undefined };
 
-
 const jettonOnChainMetadataSpec: { [key in JettonMetaDataKeys]: "utf8" | "ascii" | undefined; } = {
     name: "utf8",
     description: "utf8",
