@@ -27,27 +27,23 @@ export function jettonWalletConfigToCell(config: JettonWalletConfig): Cell {
 }
 
 export type JettonWalletData = {
-    balance: bigint,
-    ownerAddress: Address,
-    masterAddress: Address,
-    walletCode: Cell
-}
+    balance: bigint;
+    ownerAddress: Address;
+    masterAddress: Address;
+    walletCode: Cell;
+};
 
 export class JettonWallet implements Contract {
     constructor(
         readonly address: Address,
-        readonly init?: { code: Cell; data: Cell }
-    ) { }
+        readonly init?: { code: Cell; data: Cell },
+    ) {}
 
     static createFromAddress(address: Address) {
         return new JettonWallet(address);
     }
 
-    static createFromConfig(
-        config: JettonWalletConfig,
-        code: Cell,
-        workchain = 0
-    ) {
+    static createFromConfig(config: JettonWalletConfig, code: Cell, workchain = 0) {
         const data = jettonWalletConfigToCell(config);
         const init = { code, data };
         return new JettonWallet(contractAddress(workchain, init), init);
@@ -71,7 +67,7 @@ export class JettonWallet implements Contract {
             fwdAmount: bigint;
             jettonAmount: bigint;
             forwardPayload?: Maybe<Cell>;
-        }
+        },
     ) {
         const builder = beginCell()
             .storeUint(0xf8a7ea5, 32)
@@ -100,7 +96,7 @@ export class JettonWallet implements Contract {
             fwdAmount: bigint;
             jettonAmount: bigint;
             forwardPayload: Slice;
-        }
+        },
     ) {
         const builder = beginCell()
             .storeUint(0xf8a7ea5, 32)
@@ -127,7 +123,7 @@ export class JettonWallet implements Contract {
             value: bigint;
             queryId: number;
             jettonAmount: bigint;
-        }
+        },
     ) {
         await provider.internal(via, {
             value: opts.value,
@@ -145,12 +141,12 @@ export class JettonWallet implements Contract {
     async getWalletData(provider: ContractProvider): Promise<JettonWalletData> {
         const { stack } = await provider.get('get_wallet_data', []);
 
-        const result : JettonWalletData = {
+        const result: JettonWalletData = {
             balance: stack.readBigNumber(),
             ownerAddress: stack.readAddress(),
             masterAddress: stack.readAddress(),
-            walletCode: stack.readCell()
-        }
+            walletCode: stack.readCell(),
+        };
         return result;
     }
 }

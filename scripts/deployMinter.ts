@@ -4,22 +4,25 @@ import { compile, NetworkProvider } from '@ton/blueprint';
 
 //example jetton content params
 export const jettonParams = {
-    name: "Shreck2",
-    symbol: "SHR2",
-    image: ".png", // Image url
-    description: "Somebody once told me the world is gonna raw me",
+    name: 'Shreck2',
+    symbol: 'SHR2',
+    image: '.png', // Image url
+    description: 'Somebody once told me the world is gonna raw me',
 };
 
-export async function run(provider: NetworkProvider) { 
+export async function run(provider: NetworkProvider) {
     const minterCode = await compile(`JettonMinter`);
     const walletCode = await compile(`JettonWallet`);
-    const jettonMinter = provider.open(JettonMinter.createFromConfig({
-            jettonWalletCode: walletCode,
-            adminAddress: provider.sender().address!,
-            content: jettonParams,
-        },
-        minterCode
-    ))
+    const jettonMinter = provider.open(
+        JettonMinter.createFromConfig(
+            {
+                jettonWalletCode: walletCode,
+                adminAddress: provider.sender().address!,
+                content: jettonParams,
+            },
+            minterCode,
+        ),
+    );
 
     jettonMinter.sendDeploy(provider.sender(), toNano(0.05));
 

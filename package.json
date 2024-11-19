@@ -4,7 +4,9 @@
     "scripts": {
         "start": "blueprint run",
         "build": "blueprint build",
-        "test": "jest --verbose"
+        "test": "jest --verbose",
+        "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
+        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
     },
     "devDependencies": {
         "@ton/blueprint": "^0.25.0",
