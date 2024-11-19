@@ -26,6 +26,13 @@ export function jettonWalletConfigToCell(config: JettonWalletConfig): Cell {
         .endCell();
 }
 
+export type JettonWalletData = {
+    balance: bigint,
+    ownerAddress: Address,
+    masterAddress: Address,
+    walletCode: Cell
+}
+
 export class JettonWallet implements Contract {
     constructor(
         readonly address: Address,
@@ -135,8 +142,15 @@ export class JettonWallet implements Contract {
         });
     }
 
-    async getWalletData(provider: ContractProvider): Promise<[BigInt, Address, Address, Cell]> {
+    async getWalletData(provider: ContractProvider): Promise<JettonWalletData> {
         const { stack } = await provider.get('get_wallet_data', []);
-        return [stack.readBigNumber(), stack.readAddress(), stack.readAddress(), stack.readCell()];
+
+        const result : JettonWalletData = {
+            balance: stack.readBigNumber(),
+            ownerAddress: stack.readAddress(),
+            masterAddress: stack.readAddress(),
+            walletCode: stack.readCell()
+        }
+        return result;
     }
 }
