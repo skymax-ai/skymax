@@ -14,6 +14,7 @@ import { sha256_sync } from '@ton/crypto';
 
 const ONCHAIN_CONTENT_PREFIX = 0x00;
 const SNAKE_PREFIX = 0x00;
+const KEYLEN = 32;
 
 export type JettonMetaDataKeys = 'name' | 'description' | 'image' | 'symbol';
 export type MetadataContent = { [s: string]: string | undefined };
@@ -32,12 +33,13 @@ export type JettonMinterConfig = {
 };
 
 function buildTokenMetadataCell(data: MetadataContent): Cell {
-    const KEYLEN = 32;
     const dict = Dictionary.empty(Dictionary.Keys.Buffer(KEYLEN), Dictionary.Values.Cell());
 
     Object.entries(data).forEach(([k, v]: [string, string | undefined]) => {
-        if (!jettonOnChainMetadataSpec[k as JettonMetaDataKeys]) throw new Error(`Unsupported onchain key: ${k}`);
-        if (v === undefined || v === '') return;
+        if (!jettonOnChainMetadataSpec[k as JettonMetaDataKeys]) 
+            throw new Error(`Unsupported onchain key: ${k}`);
+        if (!v) 
+            return;
 
         const rootCell = beginCell().storeUint(SNAKE_PREFIX, 8).storeStringTail(v).endCell();
 
@@ -48,7 +50,6 @@ function buildTokenMetadataCell(data: MetadataContent): Cell {
 }
 
 function parseTokenMetadataCell(contentCell: Cell): MetadataContent {
-    const KEYLEN = 32;
     const content = contentCell.beginParse();
     const prefix = content.loadUint(8);
     if(prefix !== SNAKE_PREFIX) {
@@ -58,7 +59,10 @@ function parseTokenMetadataCell(contentCell: Cell): MetadataContent {
     const res: MetadataContent = {};
     Object.keys(jettonOnChainMetadataSpec).forEach((k) => {
         const val = dict.get(sha256_sync(k))?.beginParse().loadStringTail();
-        if (val) res[k as JettonMetaDataKeys] = val;
+
+        if (val) {
+            res[k as JettonMetaDataKeys] = val;
+        }
     });
 
     return res;
@@ -128,7 +132,7 @@ export class JettonMinter implements Contract {
                 .storeAddress(opts.toAddress)
                 .storeCoins(opts.amount)
                 .storeRef(
-                    beginCell()
+                    beginCell()                     //op::internal_transfer message from minter
                         .storeUint(0x178d4519, 32)
                         .storeUint(opts.queryId, 64)
                         .storeCoins(opts.jettonAmount)
