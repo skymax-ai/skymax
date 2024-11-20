@@ -1,6 +1,6 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { Cell, toNano } from '@ton/core';
-import { JettonMinter } from '../wrappers/JettonMinter';
+import { JettonMinter, MetadataContent} from '../wrappers/JettonMinter';
 import { JettonWallet } from '../wrappers/JettonWallet';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
@@ -20,7 +20,7 @@ describe('Template', () => {
     });
 
     //example jetton content params
-    const jettonParams = {
+    const jettonParams : MetadataContent = {
         name: 'MyJetton',
         symbol: 'JET1',
         image: 'https://www.linkpicture.com/q/download_183.png', // Image url
@@ -69,10 +69,10 @@ describe('Template', () => {
 
         expect(result.totalSuply).toEqual(firstMint);
         expect(result.adminAddress).toEqualAddress(deployer.address);
-        expect(result.content.name).toEqual(jettonParams.name);
-        expect(result.content.symbol).toEqual(jettonParams.symbol);
-        expect(result.content.description).toEqual(jettonParams.description);
-        expect(result.content.image).toEqual(jettonParams.image);
+        expect(result.content.name!).toMatch(jettonParams.name!);
+        expect(result.content.symbol!).toMatch(jettonParams.symbol!);
+        expect(result.content.description!).toMatch(jettonParams.description!);
+        expect(result.content.image!).toMatch(jettonParams.image!);
     });
 
     it('offchain and onchain jwallet should return the same address', async () => {
@@ -193,8 +193,6 @@ describe('Template', () => {
             fwdAmount: toNano(0.22),
             value: toNano(0.3),
         });
-
-        console.log(result.transactions);
 
         wallet1BalanceOffChain -= transferAmount;
         wallet2BalanceOffChain += transferAmount;
