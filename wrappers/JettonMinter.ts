@@ -13,6 +13,7 @@ import {
 import { sha256_sync } from '@ton/crypto';
 
 const ONCHAIN_CONTENT_PREFIX = 0x00;
+const SNAKE_PREFIX = 0x00;
 
 export type JettonMetaDataKeys = 'name' | 'description' | 'image' | 'symbol';
 export type MetadataContent = { [s: string]: string | undefined };
@@ -38,7 +39,7 @@ function buildTokenMetadataCell(data: MetadataContent): Cell {
         if (!jettonOnChainMetadataSpec[k as JettonMetaDataKeys]) throw new Error(`Unsupported onchain key: ${k}`);
         if (v === undefined || v === '') return;
 
-        const rootCell = beginCell().storeStringTail(v).endCell();
+        const rootCell = beginCell().storeUint(SNAKE_PREFIX, 8).storeStringTail(v).endCell();
 
         dict.set(sha256_sync(k), rootCell);
     });
@@ -47,14 +48,16 @@ function buildTokenMetadataCell(data: MetadataContent): Cell {
 }
 
 function parseTokenMetadataCell(contentCell: Cell): MetadataContent {
-    const KEYLEN = 256;
-    const someshit = contentCell.beginParse();
-    someshit.loadUint(8);
-    const dict = someshit.loadDict(Dictionary.Keys.Buffer(32), Dictionary.Values.Cell());
+    const KEYLEN = 32;
+    const content = contentCell.beginParse();
+    const prefix = content.loadUint(8);
+    if(prefix !== SNAKE_PREFIX) {
+        throw new Error("Only snake format is supported");
+    }
+    const dict = content.loadDict(Dictionary.Keys.Buffer(KEYLEN), Dictionary.Values.Cell());
     const res: MetadataContent = {};
     Object.keys(jettonOnChainMetadataSpec).forEach((k) => {
         const val = dict.get(sha256_sync(k))?.beginParse().loadStringTail();
-
         if (val) res[k as JettonMetaDataKeys] = val;
     });
 
@@ -72,7 +75,7 @@ export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
 
 type JettonMinterData = {
     totalSuply: bigint;
-    minusFuckingOne: bigint;
+    mintable: bigint;
     adminAddress: Address;
     content: MetadataContent;
     walletCode: Cell;
@@ -203,11 +206,11 @@ export class JettonMinter implements Contract {
     }
 
     async getMinterData(provider: ContractProvider): Promise<JettonMinterData> {
-        const data = await provider.get('get_jetton_data', []);
+        let data = await provider.get('get_jetton_data', []);
         const stack = data.stack;
         const result: JettonMinterData = {
             totalSuply: stack.readBigNumber(),
-            minusFuckingOne: stack.readBigNumber(),
+            mintable: stack.readBigNumber(),
             adminAddress: stack.readAddress(),
             content: parseTokenMetadataCell(stack.readCell()),
             walletCode: stack.readCell(),

@@ -1,4 +1,4 @@
-import { Address, toNano } from '@ton/core';
+import { toNano } from '@ton/core';
 import { JettonMinter } from '../wrappers/JettonMinter';
 import { jettonParams } from './deployMinter';
 import { JettonWallet } from '../wrappers/JettonWallet';
