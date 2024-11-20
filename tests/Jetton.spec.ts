@@ -69,10 +69,10 @@ describe('Template', () => {
 
         expect(result.totalSuply).toEqual(firstMint);
         expect(result.adminAddress).toEqualAddress(deployer.address);
-        expect(result.content.name!).toMatch(jettonParams.name!);
-        expect(result.content.symbol!).toMatch(jettonParams.symbol!);
-        expect(result.content.description!).toMatch(jettonParams.description!);
-        expect(result.content.image!).toMatch(jettonParams.image!);
+        expect(result.content.name).toMatch(jettonParams.name);
+        expect(result.content.symbol).toMatch(jettonParams.symbol);
+        expect(result.content.description).toMatch(jettonParams.description);
+        expect(result.content.image).toMatch(jettonParams.image);
     });
 
     it('offchain and onchain jwallet should return the same address', async () => {

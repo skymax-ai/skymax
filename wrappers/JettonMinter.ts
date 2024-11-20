@@ -17,7 +17,7 @@ const SNAKE_PREFIX = 0x00;
 const KEYLEN = 32;
 
 export type JettonMetaDataKeys = 'name' | 'description' | 'image' | 'symbol';
-export type MetadataContent = { [s: string]: string | undefined };
+export type MetadataContent = { [s: string]: string};
 
 const jettonOnChainMetadataSpec: { [key in JettonMetaDataKeys]: 'utf8' | 'ascii' | undefined } = {
     name: 'utf8',
