@@ -30,11 +30,11 @@ This is by far the simpler option if you want to use the standard Jetton code. Y
 
 This is much more complicated and will allow you to change the actual behavior of the Jetton to any custom behavior you want to program with the [FunC](https://ton.org/docs/#/func) language. For example, let's say you want a special Jetton that pays a 1% fee to some address every time it's transferred between users. Since this behavior is different from the standard, for this option you will need to install the FunC compiler on your machine.
 
-> Note: This project is based on the [tonstarter-contracts](https://github.com/ton-defi-org/tonstarter-contracts) repo, consult it if you need more help.
+> Note: This project is based on the [@ton/blueprint](https://github.com/ton-org/blueprint) repo, consult it if you need more help.
 
 #### Instructions:
 
-1. Make sure you have all "Dependencies and Requirements" as described in [tonstarter-contracts](https://github.com/ton-defi-org/tonstarter-contracts/#dependencies-and-requirements) repo.
+1. Make sure you have all "Dependencies and Requirements" as described in [@ton/blueprint](https://github.com/ton-org/blueprint) repo.
 
 2. Git clone the repo locally and rename the directory to your own project name.
 
@@ -42,17 +42,17 @@ This is much more complicated and will allow you to change the actual behavior o
 
 4. Edit the smart contract source files to implement your new custom behavior, they're here: `contracts/*.fc`
 
-5. Once you finish coding, build the project by running in the root repo dir `npm run build`
+5. Once you finish coding, build the project by running in the root repo dir `npx blueprint build`
 
 6. If you want to test your code locally, implement TypeScript unit tests here: `test/*.spec.ts`
 
-7. Once your tests are ready, run them by running in the root repo dir `npm run test`
+7. Once your tests are ready, run them by running in the root repo dir `npx blueprint test`
 
-8. Edit your token metadata (like name and ticker) in `jettonParams` in `build/jetton-minter.deploy.ts`
+8. Edit your token metadata (like name and ticker) in `scripts/deployMinter.ts` and `tests/Jetton.spec.ts`
 
 9. Prepare at least 0.25 TON for deployment fees.
 
-10. To deploy the token, run in the root repo dir `npm run deploy` and follow the on-screen instructions.
+10. To deploy the token minter or wallet, run in the root repo dir `npx blueprint run` and follow the on-screen instructions.
 
 &nbsp;
 ## Jetton metadata field best practices
