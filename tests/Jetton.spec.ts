@@ -23,7 +23,7 @@ describe('Template', () => {
     const jettonParams : MetadataContent = {
         name: 'MyJetton',
         symbol: 'JET1',
-        image: 'https://www.linkpicture.com/q/download_183.png', // Image url
+        image: 'https://www.linkpicture.com/q/download183.png', // Image url
         description: 'My jetton',
     };
 
@@ -91,76 +91,76 @@ describe('Template', () => {
 
     it('should mint jettons and transfer to 2 new wallets', async () => {
         // Produce mint message
-        const participant_1: SandboxContract<TreasuryContract> = await blockchain.treasury('participant_1');
-        const participant_2: SandboxContract<TreasuryContract> = await blockchain.treasury('participant_2');
+        const participant1: SandboxContract<TreasuryContract> = await blockchain.treasury('participant1');
+        const participant2: SandboxContract<TreasuryContract> = await blockchain.treasury('participant2');
 
         let totalSuplyOffChain = (await jettonMinter.getMinterData()).totalSuply;
 
-        const participantJettonWallet_1 = blockchain.openContract(
+        const participantJettonWallet1 = blockchain.openContract(
             JettonWallet.createFromConfig(
                 {
                     minterAddress: jettonMinter.address,
-                    ownerAddress: participant_1.address,
+                    ownerAddress: participant1.address,
                     walletCode: walletCode,
                 },
                 walletCode,
             ),
         );
 
-        const participantJettonWallet_2 = blockchain.openContract(
+        const participantJettonWallet2 = blockchain.openContract(
             JettonWallet.createFromConfig(
                 {
                     minterAddress: jettonMinter.address,
-                    ownerAddress: participant_2.address,
+                    ownerAddress: participant2.address,
                     walletCode: walletCode,
                 },
                 walletCode,
             ),
         );
 
-        await participantJettonWallet_1.sendDeploy(participant_1.getSender(), toNano(2));
-        await participantJettonWallet_2.sendDeploy(participant_2.getSender(), toNano(2));
+        await participantJettonWallet1.sendDeploy(participant1.getSender(), toNano(2));
+        await participantJettonWallet2.sendDeploy(participant2.getSender(), toNano(2));
 
-        expect((await participantJettonWallet_1.getWalletData()).balance).toEqual(BigInt(0));
-        expect((await participantJettonWallet_2.getWalletData()).balance).toEqual(BigInt(0));
+        expect((await participantJettonWallet1.getWalletData()).balance).toEqual(BigInt(0));
+        expect((await participantJettonWallet2.getWalletData()).balance).toEqual(BigInt(0));
 
         let participant1_mintAmount = 100n;
         await jettonMinter.sendMint(deployer.getSender(), {
             jettonAmount: participant1_mintAmount,
             queryId: 42,
-            toAddress: participant_1.address,
+            toAddress: participant1.address,
             amount: toNano(1),
             value: toNano(2),
         });
 
         totalSuplyOffChain += participant1_mintAmount;
-        expect((await participantJettonWallet_1.getWalletData()).balance).toEqual(participant1_mintAmount);
+        expect((await participantJettonWallet1.getWalletData()).balance).toEqual(participant1_mintAmount);
         expect((await jettonMinter.getMinterData()).totalSuply).toEqual(totalSuplyOffChain);
 
         let participant2_mintAmount = 100n;
         await jettonMinter.sendMint(deployer.getSender(), {
             jettonAmount: participant2_mintAmount,
             queryId: 42,
-            toAddress: participant_2.address,
+            toAddress: participant2.address,
             amount: toNano(1),
             value: toNano(2),
         });
 
         totalSuplyOffChain += participant2_mintAmount;
-        expect((await participantJettonWallet_2.getWalletData()).balance).toEqual(participant2_mintAmount);
+        expect((await participantJettonWallet2.getWalletData()).balance).toEqual(participant2_mintAmount);
         expect((await jettonMinter.getMinterData()).totalSuply).toEqual(totalSuplyOffChain);
     });
 
     it('should mint jettons and transfer from wallet1 to wallet2', async () => {
         // Produce mint message
 
-        const participant_1: SandboxContract<TreasuryContract> = await blockchain.treasury('participant_1');
-        const participant_2: SandboxContract<TreasuryContract> = await blockchain.treasury('participant_2');
+        const participant1: SandboxContract<TreasuryContract> = await blockchain.treasury('participant1');
+        const participant2: SandboxContract<TreasuryContract> = await blockchain.treasury('participant2');
 
         await jettonMinter.sendMint(deployer.getSender(), {
             jettonAmount: firstMint,
             queryId: 42,
-            toAddress: participant_1.address,
+            toAddress: participant1.address,
             amount: toNano(1),
             value: toNano(2),
         });
@@ -168,28 +168,28 @@ describe('Template', () => {
         await jettonMinter.sendMint(deployer.getSender(), {
             jettonAmount: firstMint,
             queryId: 42,
-            toAddress: participant_2.address,
+            toAddress: participant2.address,
             amount: toNano(1),
             value: toNano(2),
         });
 
-        const participantJettonWallet_1 = blockchain.openContract(
-            JettonWallet.createFromAddress(await jettonMinter.getWalletAddress(participant_1.address)),
+        const participantJettonWallet1 = blockchain.openContract(
+            JettonWallet.createFromAddress(await jettonMinter.getWalletAddress(participant1.address)),
         );
 
-        const participantJettonWallet_2 = blockchain.openContract(
-            JettonWallet.createFromAddress(await jettonMinter.getWalletAddress(participant_2.address)),
+        const participantJettonWallet2 = blockchain.openContract(
+            JettonWallet.createFromAddress(await jettonMinter.getWalletAddress(participant2.address)),
         );
 
-        let wallet1BalanceOffChain = (await participantJettonWallet_1.getWalletData()).balance;
-        let wallet2BalanceOffChain = (await participantJettonWallet_2.getWalletData()).balance;
+        let wallet1BalanceOffChain = (await participantJettonWallet1.getWalletData()).balance;
+        let wallet2BalanceOffChain = (await participantJettonWallet2.getWalletData()).balance;
         let totalSuplyOffChain = (await jettonMinter.getMinterData()).totalSuply;
 
         const transferAmount = 50n;
-        let result = await participantJettonWallet_1.sendTransfer(participant_1.getSender(), {
+        let result = await participantJettonWallet1.sendTransfer(participant1.getSender(), {
             jettonAmount: transferAmount,
             queryId: 42,
-            toAddress: participant_2.address,
+            toAddress: participant2.address,
             fwdAmount: toNano(0.22),
             value: toNano(0.3),
         });
@@ -197,8 +197,8 @@ describe('Template', () => {
         wallet1BalanceOffChain -= transferAmount;
         wallet2BalanceOffChain += transferAmount;
 
-        expect(wallet1BalanceOffChain).toEqual((await participantJettonWallet_1.getWalletData()).balance);
-        expect(wallet2BalanceOffChain).toEqual((await participantJettonWallet_2.getWalletData()).balance);
+        expect(wallet1BalanceOffChain).toEqual((await participantJettonWallet1.getWalletData()).balance);
+        expect(wallet2BalanceOffChain).toEqual((await participantJettonWallet2.getWalletData()).balance);
         expect(totalSuplyOffChain).toEqual((await jettonMinter.getMinterData()).totalSuply);
     });
 
